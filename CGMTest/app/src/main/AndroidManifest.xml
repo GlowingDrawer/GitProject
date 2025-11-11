@@ -1,18 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest package="com.example.bleplot" xmlns:android="http://schemas.android.com/apk/res/android">
-
-    <!-- BLE capability -->
-    <uses-feature android:name="android.hardware.bluetooth_le" android:required="true"/>
-
-    <!-- Android 12+ (API 31+) runtime perms -->
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
-        android:usesPermissionFlags="neverForLocation"/>
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
-
-    <!-- Legacy (<= API 30) -->
-    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30"/>
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30"/>
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30"/>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <application
         android:allowBackup="true"
@@ -35,7 +23,5 @@
             </intent-filter>
         </activity>
     </application>
+
 </manifest>
-
-
-    >
