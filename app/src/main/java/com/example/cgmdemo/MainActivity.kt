@@ -128,13 +128,28 @@ class MainActivity : ComponentActivity(), CoroutineScope by MainScope() {
 
     private fun ensureBtPermission(): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val perm = Manifest.permission.BLUETOOTH_CONNECT
-            if (ContextCompat.checkSelfPermission(this, perm)
-                != PackageManager.PERMISSION_GRANTED
+            val neededPerms = mutableListOf<String>()
+
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.BLUETOOTH_CONNECT
+                ) != PackageManager.PERMISSION_GRANTED
             ) {
+                neededPerms.add(Manifest.permission.BLUETOOTH_CONNECT)
+            }
+
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.BLUETOOTH_SCAN
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                neededPerms.add(Manifest.permission.BLUETOOTH_SCAN)
+            }
+
+            if (neededPerms.isNotEmpty()) {
                 ActivityCompat.requestPermissions(
                     this,
-                    arrayOf(perm),
+                    neededPerms.toTypedArray(),
                     100
                 )
                 Toast.makeText(
@@ -147,6 +162,7 @@ class MainActivity : ComponentActivity(), CoroutineScope by MainScope() {
         }
         return true
     }
+
 
     private fun updateDeviceList() {
         if (!ensureBtPermission()) return
