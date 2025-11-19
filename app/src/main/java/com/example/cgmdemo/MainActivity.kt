@@ -24,8 +24,18 @@ import java.util.ArrayDeque
 
 class MainActivity : ComponentActivity(), CoroutineScope by MainScope() {
 
+    data class SaveConfig(
+        var autoSave: Boolean = false,
+        var saveIntervalMs: Int = 1000,
+        var savePath: String = "./serial_data"
+    )
+
+    private var saveConfig = SaveConfig()
+
+
     private lateinit var binding: ActivityMainBinding
     private lateinit var serialManager: BluetoothSerialManager
+    private lateinit var pageManager: PageManager        // ← 新增
     private val sensorAdapter = SensorAdapter()
 
     // 数据缓存（最多保留 2000 条）
@@ -52,21 +62,35 @@ class MainActivity : ComponentActivity(), CoroutineScope by MainScope() {
     }
 
     private fun setupUi() {
-        // 接收区 TextView 滚动
-        binding.txtReceive.movementMethod = ScrollingMovementMethod.getInstance()
+        // ====== ① 初始化 PageManager ======
+        pageManager = PageManager(
+            flipper = binding.viewFlipper,
+            tabSerial = binding.btnTabSerial,
+            tabMonitor = binding.btnTabMonitor,
+            tabSettings = binding.btnTabSettings
+        )
 
-        // RecyclerView
-        binding.recyclerData.layoutManager = LinearLayoutManager(this)
-        binding.recyclerData.adapter = sensorAdapter
-
-        // Chart 初始化
-        initChart()
-
-        // 按钮事件
-        binding.btnRefreshDevices.setOnClickListener {
-            updateDeviceList()
+        // 顶部 Tab 点击事件，交给 PageManager 来切页
+        binding.btnTabSerial.setOnClickListener {
+            pageManager.showSerial()
+        }
+        binding.btnTabMonitor.setOnClickListener {
+            pageManager.showMonitor()
+        }
+        binding.btnTabSettings.setOnClickListener {
+            pageManager.showSettings()
         }
 
+        // 默认打开监测页（可根据需要改）
+        pageManager.showMonitor()
+
+        binding.txtReceive.movementMethod = ScrollingMovementMethod.getInstance()
+        binding.recyclerData.layoutManager = LinearLayoutManager(this)
+        binding.recyclerData.adapter = sensorAdapter
+        initChart()
+
+        // 刷新 / 连接 / 发送 / 命令按钮这些逻辑保持不变
+        binding.btnRefreshDevices.setOnClickListener { updateDeviceList() }
         binding.btnConnect.setOnClickListener {
             if (!serialManager.isConnected()) {
                 if (ensureBtPermission()) {
@@ -77,19 +101,55 @@ class MainActivity : ComponentActivity(), CoroutineScope by MainScope() {
                 setDisconnectedUi()
             }
         }
-
         binding.btnSend.setOnClickListener {
             val text = binding.editSend.text.toString()
             if (text.isNotBlank()) {
                 serialManager.send(text)
             }
         }
-
         binding.btnStart.setOnClickListener { sendCommand("START") }
         binding.btnPause.setOnClickListener { sendCommand("PAUSE") }
         binding.btnResume.setOnClickListener { sendCommand("RESUME") }
         binding.btnForcePause.setOnClickListener { sendCommand("ForcePause") }
+
+        // 设置页简单逻辑（可选）
+        setupSettingsPage()
     }
+
+    private fun showPage(index: Int) {
+        binding.viewFlipper.displayedChild = index
+    }
+
+    private fun setupSettingsPage() {
+        // 初始化 UI 显示当前配置
+        binding.checkAutoSave.isChecked = saveConfig.autoSave
+        binding.editSaveInterval.setText(saveConfig.saveIntervalMs.toString())
+        binding.editSavePath.setText(saveConfig.savePath)
+
+        binding.btnSaveSettings.setOnClickListener {
+            // 从 UI 读取配置
+            val intervalText = binding.editSaveInterval.text.toString()
+            val interval = intervalText.toIntOrNull() ?: 1000
+            saveConfig = saveConfig.copy(
+                autoSave = binding.checkAutoSave.isChecked,
+                saveIntervalMs = interval,
+                savePath = binding.editSavePath.text.toString()
+            )
+            Toast.makeText(this, "已保存设置：${interval}ms, 路径=${saveConfig.savePath}", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.btnResetSettings.setOnClickListener {
+            // 恢复默认值
+            saveConfig = SaveConfig()
+            binding.checkAutoSave.isChecked = saveConfig.autoSave
+            binding.editSaveInterval.setText(saveConfig.saveIntervalMs.toString())
+            binding.editSavePath.setText(saveConfig.savePath)
+            Toast.makeText(this, "已恢复默认设置", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+
+
 
     private fun sendCommand(cmd: String) {
         binding.editSend.setText(cmd)

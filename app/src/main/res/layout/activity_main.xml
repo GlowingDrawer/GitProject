@@ -1,130 +1,252 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/rootLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="8dp">
+    android:orientation="vertical">
 
-    <!-- 状态行 -->
-    <TextView
-        android:id="@+id/txtStatus"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="状态: 未连接"
-        android:textStyle="bold"
-        android:textColor="@android:color/holo_red_dark" />
-
-    <!-- 设备选择 + 刷新 + 连接 -->
+    <!-- 顶部“页面切换”按钮，相当于 QStackedWidget 外面那排导航 -->
     <LinearLayout
+        android:id="@+id/topTabs"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginTop="4dp">
+        android:orientation="horizontal">
 
-        <Spinner
-            android:id="@+id/spinnerDevices"
+        <Button
+            android:id="@+id/btnTabSerial"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1" />
+            android:layout_weight="1"
+            android:text="串口通信" />
 
         <Button
-            android:id="@+id/btnRefreshDevices"
-            android:layout_width="wrap_content"
+            android:id="@+id/btnTabMonitor"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="刷新" />
+            android:layout_weight="1"
+            android:text="数据监测" />
 
         <Button
-            android:id="@+id/btnConnect"
-            android:layout_width="wrap_content"
+            android:id="@+id/btnTabSettings"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="连接" />
+            android:layout_weight="1"
+            android:text="设置" />
     </LinearLayout>
 
-    <!-- 接收区（原始JSON日志） -->
-    <TextView
-        android:id="@+id/txtReceive"
-        android:layout_width="match_parent"
-        android:layout_height="120dp"
-        android:layout_marginTop="4dp"
-        android:background="#eeeeee"
-        android:padding="4dp"
-        android:textSize="12sp"
-        android:scrollbars="vertical" />
-
-    <!-- 发送区 -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="4dp">
-
-        <EditText
-            android:id="@+id/editSend"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:hint="输入要发送的数据" />
-
-        <Button
-            android:id="@+id/btnSend"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="发送" />
-    </LinearLayout>
-
-    <!-- 快捷命令 -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="4dp">
-
-        <Button
-            android:id="@+id/btnStart"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="START" />
-
-        <Button
-            android:id="@+id/btnPause"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="PAUSE" />
-
-        <Button
-            android:id="@+id/btnResume"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="RESUME" />
-
-        <Button
-            android:id="@+id/btnForcePause"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="ForcePause" />
-    </LinearLayout>
-
-    <!-- 时间-葡萄糖折线图 -->
-    <com.github.mikephil.charting.charts.LineChart
-        android:id="@+id/chartGlucose"
+    <!-- ViewFlipper = Android 版 QStackedWidget -->
+    <ViewFlipper
+        android:id="@+id/viewFlipper"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="4dp" />
+        android:layout_weight="1">
 
-    <!-- 数据列表 -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerData"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="4dp" />
+        <!-- Page 0: 串口/蓝牙页（先做简单占位） -->
+        <LinearLayout
+            android:id="@+id/page_serial_root"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <TextView
+                android:id="@+id/txtSerialInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="这里可以放串口/蓝牙调试相关控件（占位页）" />
+        </LinearLayout>
+
+        <!-- Page 1: 数据监测页（你现在已经在用的那一整页） -->
+        <LinearLayout
+            android:id="@+id/page_monitor_root"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <!-- 状态行 -->
+            <TextView
+                android:id="@+id/txtStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/status_disconnected"
+                android:textStyle="bold"
+                android:textColor="@android:color/holo_red_dark" />
+
+            <!-- 设备选择 + 刷新 + 连接 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="4dp">
+
+                <Spinner
+                    android:id="@+id/spinnerDevices"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <Button
+                    android:id="@+id/btnRefreshDevices"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="刷新" />
+
+                <Button
+                    android:id="@+id/btnConnect"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="连接" />
+            </LinearLayout>
+
+            <!-- 接收区（原始JSON日志） -->
+            <TextView
+                android:id="@+id/txtReceive"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:layout_marginTop="4dp"
+                android:background="#eeeeee"
+                android:padding="4dp"
+                android:textSize="12sp"
+                android:scrollbars="vertical" />
+
+            <!-- 发送区 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="4dp">
+
+                <EditText
+                    android:id="@+id/editSend"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="输入要发送的数据" />
+
+                <Button
+                    android:id="@+id/btnSend"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="发送" />
+            </LinearLayout>
+
+            <!-- 快捷命令 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="4dp">
+
+                <Button
+                    android:id="@+id/btnStart"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="START" />
+
+                <Button
+                    android:id="@+id/btnPause"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="PAUSE" />
+
+                <Button
+                    android:id="@+id/btnResume"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="RESUME" />
+
+                <Button
+                    android:id="@+id/btnForcePause"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="ForcePause" />
+            </LinearLayout>
+
+            <!-- 时间-葡萄糖折线图 -->
+            <com.github.mikephil.charting.charts.LineChart
+                android:id="@+id/chartGlucose"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:layout_marginTop="4dp" />
+
+            <!-- 数据列表 -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerData"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+
+        <!-- Page 2: 设置页（简单版，对应 Python 的 SettingsPage） -->
+        <ScrollView
+            android:id="@+id/page_settings_root"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="保存配置"
+                    android:textStyle="bold"
+                    android:textSize="16sp" />
+
+                <CheckBox
+                    android:id="@+id/checkAutoSave"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="自动保存数据" />
+
+                <EditText
+                    android:id="@+id/editSaveInterval"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="保存间隔 (ms)"
+                    android:inputType="number" />
+
+                <EditText
+                    android:id="@+id/editSavePath"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="保存路径（逻辑用，不一定真写文件）" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp">
+
+                    <Button
+                        android:id="@+id/btnSaveSettings"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="保存设置" />
+
+                    <Button
+                        android:id="@+id/btnResetSettings"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="恢复默认" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </ScrollView>
+
+    </ViewFlipper>
 
 </LinearLayout>
