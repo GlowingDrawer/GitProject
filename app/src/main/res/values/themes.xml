@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
-    <style name="Theme.CgmDemo" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- 应用的主主题，名字必须和 Manifest 里的 Theme.Cgmdemo 一致 -->
+    <style name="Theme.Cgmdemo" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- 先不做任何自定义，后面你想配颜色再加 item -->
+        <!-- 例如:
+        <item name="colorPrimary">@android:color/holo_blue_dark</item>
+        -->
+    </style>
+
 </resources>

@@ -1,3 +1,20 @@
 <resources>
-    <string name="app_name">CgmDemo</string>
+    <string name="app_name">cgmdemo</string>
+
+    <!-- 状态栏 -->
+    <string name="status_connected">状态: 已连接 (%1$s)</string>
+    <string name="status_disconnected">状态: 未连接</string>
+
+    <!-- 图表相关 -->
+    <string name="chart_no_data">等待数据...</string>
+    <string name="chart_description">时间-葡萄糖（滤波后）</string>
+    <string name="chart_label_glucose">葡萄糖(mA)</string>
+
+    <!-- 蓝牙 / 设备提示 -->
+    <string name="grant_bt_permission">请先授予蓝牙权限</string>
+    <string name="no_paired_device">没有已配对的蓝牙设备</string>
+    <string name="select_valid_device">请选择有效设备</string>
+    <string name="connect_failed">连接失败: %1$s</string>
+    <string name="no_paired_bluetooth">（无已配对蓝牙设备）</string>
+    <string name="device_name_address">%1$s (%2$s)</string>
 </resources>
