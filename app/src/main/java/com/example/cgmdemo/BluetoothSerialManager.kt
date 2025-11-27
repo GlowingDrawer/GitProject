@@ -25,7 +25,7 @@ class BluetoothSerialManager(
     private val scope: CoroutineScope
 ) {
 
-    // ⭐ 推荐写法：S 及以上用 BluetoothManager，老版本用 getDefaultAdapter()
+    // Android 12+ 推荐用 BluetoothManager，旧版用 getDefaultAdapter()
     private val adapter: BluetoothAdapter? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         val manager = context.getSystemService(BluetoothManager::class.java)
         manager?.adapter
@@ -36,7 +36,9 @@ class BluetoothSerialManager(
 
     private var socket: BluetoothSocket? = null
     private var job: Job? = null
-    private val buffer = StringBuilder()
+
+    // 用于拼接 JSON 文本
+    private val jsonBuffer = StringBuilder()
 
     fun getPairedDevices(): List<BluetoothDevice> {
         return adapter?.bondedDevices?.toList() ?: emptyList()
@@ -44,14 +46,23 @@ class BluetoothSerialManager(
 
     fun isConnected(): Boolean = socket?.isConnected == true
 
+    /**
+     * @param onRawBytes 每次 read() 收到的数据（原始字节），用于界面显示文本/Hex
+     * @param onJson 每解析出一个完整 JSON，就回调一次
+     */
     fun connect(
         device: BluetoothDevice,
         onConnected: () -> Unit,
+        onDisconnected: () -> Unit,
         onError: (Throwable) -> Unit,
+        onRawBytes: (ByteArray, Int) -> Unit,
         onJson: (JSONObject) -> Unit
     ) {
         disconnect()
+        jsonBuffer.setLength(0)
+
         job = scope.launch(Dispatchers.IO) {
+            var error: Throwable? = null
             try {
                 val uuid = device.uuids?.firstOrNull()?.uuid
                     ?: UUID.fromString("00001101-0000-1000-8000-00805f9b34fb") // SPP
@@ -70,46 +81,66 @@ class BluetoothSerialManager(
                     val n = try {
                         input.read(buf)
                     } catch (e: IOException) {
+                        error = e
                         break
                     }
                     if (n <= 0) break
+
+                    // 1) 原始字节回调（给接收区显示）
+                    val copy = buf.copyOf(n)
+                    withContext(Dispatchers.Main) {
+                        onRawBytes(copy, n)
+                    }
+
+                    // 2) 文本拼接成 JSON 缓冲
                     val text = String(buf, 0, n, Charsets.UTF_8)
-                    handleIncoming(text, onJson)
+                    handleIncomingText(text, onJson)
                 }
             } catch (e: Throwable) {
-                withContext(Dispatchers.Main) {
-                    onError(e)
-                }
+                error = e
             } finally {
                 try {
                     socket?.close()
                 } catch (_: Exception) {
                 }
                 socket = null
+
+                withContext(Dispatchers.Main) {
+                    if (error != null) {
+                        onError(error!!)
+                    }
+                    onDisconnected()
+                }
             }
         }
     }
 
-    private fun handleIncoming(chunk: String, onJson: (JSONObject) -> Unit) {
-        buffer.append(chunk)
+    /**
+     * 把串口文本流拼接成一个个 JSON: {...}，每解析出一个就回调
+     */
+    private fun handleIncomingText(chunk: String, onJson: (JSONObject) -> Unit) {
+        jsonBuffer.append(chunk)
         while (true) {
-            val start = buffer.indexOf('{')
+            val start = jsonBuffer.indexOf("{")
             if (start == -1) {
-                buffer.setLength(0)
+                // 没有 '{'，清空缓冲
+                jsonBuffer.setLength(0)
                 return
             }
-            val end = buffer.indexOf('}', startIndex = start)
+            val end = jsonBuffer.indexOf("}", startIndex = start)
             if (end == -1) {
-                // 不完整，保留从 { 开始的部分
+                // 只找到起始 '{'，还没到 '}'，保留从 '{' 开始的部分
                 if (start > 0) {
-                    buffer.delete(0, start)
+                    jsonBuffer.delete(0, start)
                 }
                 return
             }
-            val jsonStr = buffer.substring(start, end + 1)
-            buffer.delete(0, end + 1)
+            // 截取完整 JSON
+            val jsonStr = jsonBuffer.substring(start, end + 1)
+            jsonBuffer.delete(0, end + 1)
             try {
                 val obj = JSONObject(jsonStr)
+                // 增加接收时间字段
                 val nowStr = SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault())
                     .format(Date())
                 obj.put("receive_time", nowStr)
@@ -117,16 +148,20 @@ class BluetoothSerialManager(
                     onJson(obj)
                 }
             } catch (e: JSONException) {
-                // 丢弃这段，继续尝试
+                // 解析失败，丢弃这一段，继续找下一段
             }
         }
     }
 
     fun send(text: String) {
+        sendBytes(text.toByteArray(Charsets.UTF_8))
+    }
+
+    fun sendBytes(data: ByteArray) {
         val out = socket?.outputStream ?: return
         scope.launch(Dispatchers.IO) {
             try {
-                out.write(text.toByteArray(Charsets.UTF_8))
+                out.write(data)
                 out.flush()
             } catch (_: Exception) {
             }

@@ -17,4 +17,24 @@
     <string name="connect_failed">连接失败: %1$s</string>
     <string name="no_paired_bluetooth">（无已配对蓝牙设备）</string>
     <string name="device_name_address">%1$s (%2$s)</string>
+
+
+    <!-- 滤波相关 -->
+    <string name="filter_type_none">不使用滤波</string>
+    <string name="filter_type_moving_avg">滑动平均</string>
+    <string name="filter_type_median">中值滤波</string>
+    <string name="filter_type_kalman">卡尔曼滤波</string>
+
+    <string name="filter_status_window">当前滤波: %1$s (窗口%2$d)</string>
+    <string name="filter_status_kalman">当前滤波: %1$s (Q=%2$.4f, R=%3$.4f)</string>
+
+    <!-- 图表描述/标签 -->
+    <string name="chart_desc_time_glucose">时间-葡萄糖（滤波后）</string>
+    <string name="chart_desc_volt_uric">电压-尿酸（滤波后）</string>
+    <string name="chart_desc_volt_ascorbic">电压-抗坏血酸（滤波后）</string>
+    <string name="chart_desc_volt_glucose">电压-葡萄糖（滤波后）</string>
+
+    <string name="chart_label_uric">尿酸(uA)</string>
+    <string name="chart_label_ascorbic">抗坏血酸(uA)</string>
+
 </resources>
